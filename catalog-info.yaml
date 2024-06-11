@@ -1,0 +1,12 @@
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: "adamjava"
+  description: "adamjava"
+  annotations:
+    github.com/project-slug: IntegrationWorks/adamjava
+spec:
+  type: service
+  lifecycle: experimental
+  owner: "group:default/guests"
