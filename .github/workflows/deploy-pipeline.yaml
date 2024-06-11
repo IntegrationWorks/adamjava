@@ -10,37 +10,38 @@ on:
       helm-chart:
         type: string
         description: Helm Chart
-        default: ./k8s-nodejs-0.0.1.tgz
+        default: ./k8s-maven-0.0.1.tgz
       cluster:
         type: string
         description: Name of cluster to deploy to
-      aws-region:
+      resource-group:
         type: string
-        description: AWS region where the cluster is
-        default: ap-southeast-2 
+        description: Name of resource-group in Azure to deploy to
 
 env:
   IMAGE_HOST: ghcr.io
-  AWS_REGION: ${{ github.event.inputs.aws-region }}
   IMAGE_PATH: ${{ github.repository }}
   IMAGE_TAG: ${{ github.event.inputs.image-tag }}
   APP_NAME: ${{ github.event.repository.name }}
   HELM_CHART: ${{ github.event.inputs.helm-chart }}
-  EKS_CLUSTER_NAME: ${{ github.event.inputs.cluster }}
+  AKS_CLUSTER_NAME: ${{ github.event.inputs.cluster }}
+  AZ_RESOURCE_GROUP: ${{ github.event.inputs.resource-group }}
+  ARM_CLIENT_ID: ${{secrets.ARM_CLIENT_ID}}
+  ARM_CLIENT_SECRET: ${{secrets.ARM_CLIENT_SECRET}}
+  ARM_TENANT_ID: ${{secrets.ARM_TENANT_ID}}
+  ARM_SUBSCRIPTION_ID: ${{secrets.ARM_SUBSCRIPTION_ID}}
 
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          creds: '{"clientId": "${{ env.ARM_CLIENT_ID}}", "clientSecret":"${{env.ARM_CLIENT_SECRET}}", "tenantId": "${{ env.ARM_TENANT_ID}}","subscriptionId": "${{ env.ARM_SUBSCRIPTION_ID}}"}'
 
       - name: Update kube config
-        run: aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+        run: az aks get-credentials --resource-group $AZ_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
 
       - uses: actions/checkout@v4
         name: checkout helm repo
